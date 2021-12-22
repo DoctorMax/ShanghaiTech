@@ -5,4 +5,4 @@
 
 输入输出部分参考了：https://github.com/Octogonapus/SpecialHeapProject/tree/master/SoftHeap
 
-我也进行了部分补足。
+我也进行了部分补足,具体文档见docx
