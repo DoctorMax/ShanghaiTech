@@ -1,0 +1,28 @@
+i 0
+i 1
+i 2
+i 3
+i 10
+i 100
+i 1000
+i 999
+i 1000000
+d
+d
+d
+d
+d
+d
+d
+d
+d
+d
+d
+d
+d
+d
+d
+d
+d
+d
+d
