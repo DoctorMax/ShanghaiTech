@@ -11,7 +11,8 @@
 #include <list>
 #include <algorithm>
 #include <iomanip>
-#include <chrono>
+#include <ctime>
+#include <stack>
 #define INFTY 666666666
 using namespace std;
 // 数据结构定义
@@ -242,7 +243,6 @@ public:
             (v->rank % 2 == 1 || v->child->rank < v->rank - 1))
         {
 
-
             v->next = sift(v->next);
 
             // 再进行一次调整
@@ -289,15 +289,15 @@ public:
     // insert的实现方法为：新建一个只有一个node的树，然后挂在一个新的head下，然后合并进软堆
     void insert(int new_key)
     {
-        node *q;
-        itemListNode *l= new itemListNode();
+        node *q = new node();
+        ;
+        itemListNode *l = new itemListNode();
 
         // 生成新node的list，然后把新的key扔进去，作为一个新的list元素
         l->key = new_key;
         l->next = NULL;
 
         // 生成新node
-        q = new node();
         q->rank = 0;
         // 因为list里只有一个key，那么ckey就等于key
         q->ckey = new_key;
@@ -314,10 +314,9 @@ public:
         node *s, *tmp;
         int min;
         int childcount;
-        head *h;
 
         // h是head list中root节点ckey最小的head
-        h = header->next->suffix_min;
+        head *h = header->next->suffix_min;
 
         // 如果h的root的item list是空的，那么我们就要进行操作
         while (h->queue->il == NULL)
@@ -380,6 +379,34 @@ public:
 
         return min;
     }
+
+    // 删除某一个item
+    bool deleteOne(int key_num, int new_key)
+    {
+        stack<int> temp_stack;
+        int value;
+        for (int i = 0; i < key_num; i++)
+        {
+            value = popMin();
+            if (value == new_key)
+            {
+                while (!temp_stack.empty())
+                {
+                    insert(temp_stack.top());
+                    temp_stack.pop();
+                }
+                return true;
+            }else{
+                temp_stack.push(value);
+            }
+        }
+        while (!temp_stack.empty())
+        {
+            insert(temp_stack.top());
+            temp_stack.pop();
+        }
+        return false;
+    }
 };
 
 int main()
@@ -399,6 +426,7 @@ int main()
         int r;
         char op;
         int value;
+        bool status;
         int node_num = 0;
         cout << "Enter (int)r:" << endl;
         cin >> r;
@@ -408,11 +436,11 @@ int main()
             switch (op)
             {
             case 'i':
-                scanf(" %d\n", &value);
+                scanf(" %d", &value);
                 heap->insert(value);
                 node_num++;
                 break;
-            case 'd':
+            case 'p':
                 if (node_num == 0)
                 {
                     cout << "The queue is empty!" << endl;
@@ -421,6 +449,25 @@ int main()
                 value = heap->popMin();
                 cout << value << endl;
                 node_num--;
+                break;
+            case 'd':
+                scanf(" %d", &value);
+                if (node_num == 0)
+                {
+                    cout << "The queue is empty!" << endl;
+                    break;
+                }
+                status = heap->deleteOne(node_num, value);
+                if (status)
+                {
+                    cout << "Sucess!" << endl;
+                    node_num--;
+                }
+                else
+                {
+                    cout << "Fail!" << endl;
+                }
+
                 break;
             default:
                 break;
@@ -431,11 +478,12 @@ int main()
     case 1:
     {
         // 自动生成模式
+        clock_t start, end;
         int r;
         int size;
         char op;
         int value;
-        static const int max_size = 100000;
+        static const int max_size = 100000000;
         int *inserts = new int[max_size];
         int *deletes_old = new int[max_size];
         int *deletes_new = new int[max_size];
@@ -457,17 +505,17 @@ int main()
             inserts[i] = rand();
         }
         // 开始计soft heap时
-        chrono::system_clock::time_point t(chrono::system_clock::now());
+        start = clock();
         // 使用soft heap
         for (i = 0; i < size; i++)
             heap->insert(inserts[i]);
         for (i = 0; i < size; i++)
             deletes_new[i] = heap->popMin();
         // soft heap结束
-        chrono::system_clock::time_point t2(chrono::system_clock::now());
-        cout << "soft heap duration: " << (t2 - t).count() << endl;
+        end = clock();
+        cout << "soft heap duration: " << end - start << "ms" << endl;
         // 使用传统方法
-        chrono::system_clock::time_point t3(chrono::system_clock::now());
+        start = clock();
         for (i = 0; i < size; i++)
             pq.push(inserts[i]);
         for (i = 0; i < size; i++)
@@ -475,15 +523,15 @@ int main()
             deletes_old[i] = pq.top();
             pq.pop();
         }
-        chrono::system_clock::time_point t4(chrono::system_clock::now());
-        cout << "traditional heap duration: " << (t4 - t3).count() << endl;
-        cout << "old"
-             << "|"
-             << "new" << endl;
+        end = clock();
+        cout << "traditional heap duration: " << end - start << "ms" << endl;
+        // cout << "old"
+        //  << "|"
+        //  << "new" << endl;
         // 比较两个输出的错误率
         for (int i = 0; i < size; i++)
         {
-            cout << deletes_old[i] << "|" << deletes_new[i] << endl;
+            // cout << deletes_old[i] << "|" << deletes_new[i] << endl;
             if (deletes_old[i] != deletes_new[i])
             {
                 error_num++;
@@ -505,8 +553,8 @@ int main()
         static const int size = 100000;
         int inserts[size];
         int deletes[size];
-        int icount = 0, dcount = 0;
         int i, z;
+        bool status;
         softHeap *heap;
         FILE *fp;
         cout << "Enter (int)r:" << endl;
@@ -522,21 +570,41 @@ int main()
             case 'i':
                 fscanf(fp, " %d\n", &value);
                 heap->insert(value);
-                inserts[icount] = value;
-                icount++;
+                node_num++;
                 break;
-            case 'd':
+            case 'p':
                 fscanf(fp, "\n");
-                if (dcount == icount)
+                if (node_num == 0)
                 {
                     cout << "The queue is empty!" << endl;
                     break;
                 }
                 value = heap->popMin();
-                deletes[dcount] = value;
-                output << deletes[dcount] << "\n";
-                cout << deletes[dcount] << endl;
-                dcount++;
+                output << value << "\n";
+                cout << value << endl;
+                node_num--;
+                break;
+            case 'd':
+                fscanf(fp, " %d\n", &value);
+                if (node_num == 0)
+                {
+                    cout << "The queue is empty!" << endl;
+                    break;
+                }
+                status = heap->deleteOne(node_num, value);
+                if (status)
+                {
+                    output << "Sucess!"
+                           << "\n";
+                    cout << "Sucess!" << endl;
+                    node_num--;
+                }
+                else
+                {
+                    output << "Fail!"
+                           << "\n";
+                    cout << "Fail!" << endl;
+                }
                 break;
             default:
                 break;
